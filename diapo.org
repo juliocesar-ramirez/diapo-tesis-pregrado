@@ -1,0 +1,308 @@
+#+STARTUP: beamer overview indent inlineimages logdrawer
+#+TITLE: @@latex: Implementación de la ecuación de Morison aplicado a
+#+TITLE:  \\ ondas de tsunami en costas con vegetación con el modelo numérico Telemac@@
+#+AUTHOR:    \footnotesize Julio Cesar Ramirez Paredes \newline \scriptsize \emph{julio.ramirez@pucp.edu.pe} \vspace{0.1cm} \newline  \footnotesize Mitchel Jara García  \newline \scriptsize \emph{mjarag@pucp.edu.pe} \vspace{0.1cm} \newline \footnotesize Luis Moya Huallpa \newline \scriptsize \emph{lmoya@pucp.edu.pe}
+#+DATE:      \scriptsize \date
+#+OPTIONS:   H:2 num:t toc:t @:t \n:nil ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   tex:t latex:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+EXPORT_FILE_NAME: aux/julio-ramirez
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \titlegraphic{\includegraphics[width=2.5cm]{figure/pucp.png}}
+#+latex_header: \usepackage[style=apa, backend=biber]{biblatex}
+
+* latex setup                                                        :ignore:
+#+LATEX_CLASS: beamer
+#+LATEX_CLASS_OPTIONS: [11pt, aspectratio=169, xcolor={table,usenames,dvipsnames}]
+#+LATEX_HEADER: \mode<beamer>{\usetheme[numbering=fraction, progressbar=head, titleformat frame=regular, titleformat title=regular, sectionpage=none]{metropolis}}
+#+LATEX_HEADER: \usepackage{lipsum}
+#+LATEX_HEADER: \definecolor{Base}{HTML}{191F26}
+#+LATEX_HEADER: \colorlet{Accent}{OliveGreen!85!Black}
+#+LATEX_HEADER: \colorlet{Highlight}{Accent!18}
+#+LATEX_HEADER: \setbeamercolor{normal text}{bg=black!2,fg=Base}
+#+LATEX_HEADER: \setbeamercolor{alerted text}{fg=Accent}
+#+LATEX_HEADER: \usefonttheme{professionalfonts}
+#+LATEX_HEADER: \usepackage{newpxtext}
+#+LATEX_HEADER: \usepackage{newpxmath}
+#+LATEX_HEADER: \usepackage{sourcecodepro}
+#+LATEX_HEADER: \usepackage{booktabs}
+#+LATEX_HEADER: \usepackage{array}
+#+LATEX_HEADER: \usepackage{listings}
+#+LATEX_HEADER: \usepackage{multirow}
+#+LATEX_HEADER: \usepackage{caption}
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage[scale=2]{ccicons}
+#+LATEX_HEADER: \usepackage{hyperref}
+#+LATEX_HEADER: \usepackage{relsize}
+#+LATEX_HEADER: \usepackage{amsmath}
+#+LATEX_HEADER: \usepackage{bm}
+#+LATEX_HEADER: \usepackage{tikz}
+#+LATEX_HEADER: \usetikzlibrary{shapes.geometric, arrows}
+#+latex_header: \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30]
+#+latex_header: \tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
+#+latex_header: \tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=0.5cm, text centered, draw=black, fill=green!30]
+#+latex_header: \tikzstyle{arrow} = [thick,->,>=stealth]
+#+latex_header: \tikzstyle{parallelogram} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+#+LATEX_HEADER: \usepackage{ragged2e}
+#+LATEX_HEADER: \usepackage{textcomp}
+#+LATEX_HEADER: \usepackage{pgfplots}
+#+LATEX_HEADER: \usepgfplotslibrary{dateplot}
+#+LATEX_HEADER: \useoutertheme[subsection=false]{miniframes}
+#+LATEX_HEADER: \makeatletter
+#+LATEX_HEADER: \setbeamercolor{section in head/foot}{fg=Accent, bg=white} 
+#+LATEX_HEADER: \setlength{\metropolis@titleseparator@linewidth}{1pt}
+#+LATEX_HEADER: \makeatother
+#+LANGUAGE: sp
+#+LATEX_HEADER: \usepackage{smartdiagram}
+
+* Justificación
+** Dinámica de tsunami atravezando vegetación
+
+- Disminución de la altura de agua.
+- Amortiguamiento de la enegia del tsunami.
+- Dismimución en la celeridad. 
+- Reducción de velocidad.
+  
+#+CAPTION: Yamashita, M. S. (2011). Tsunami del 11 de marzon en Japón. National Geographic. \scriptsize \url{https://www.nationalgeographic.es/ciencia/2024/01/megaterremoto-japon-2011-explorando-enorme-cicatriz-dejo-fondo-mar}
+#+attr_latex: :width 160px
+[[file:figure/tsunami.jpg]]
+
+** Comparación entre enfoque microcóspico y macrocópico
+
+#+CAPTION: Evolución de la superficie de agua para un arreglo de 1.635 m con altura de ola de 0.05m para los resultados con enfoque macroscópico y microcópico. Reproducido de \textcite{maza2015}
+#+attr_latex: :width 210px
+[[file:figure/maza2015.png]]
+
+** Enfoques de interacción agua y vegetación
+
+#+CAPTION: Métodos para simular la propagación de onda a través de una zona de vegetación. Reproducido de \textcite{peng2024}
+#+label: fig:ubicacion
+#+attr_latex: :width 240px
+[[file:figure/enfoque.png]]
+
+* Objetivos
+** Objetivos de la investigación
+*** Objetivos principal:
+- Implementar en la ecuación de momento en el término de fuerza, la
+  ecuación de Morison, para parametrizar costas con vegetación
+  surmergida.
+ 
+*** Objetivos secundarios:
+- Obtener un código que idealice la vegetación en costa con el fin de
+  mejorar la eficiencia computacional. 
+- Calibrar los parámetros para el modelamiento numérico de un tsunami
+  en zonas costeras con vegetación.
+- Comparar los resultados de investigaciones anteriores con la
+  configuración de vegetación de altura mixta para su posterior recomendación y análisis.
+
+* Metodología
+#+BEGIN_EXPORT latex
+
+\begin{figure}[H]
+\begin{flushleft}
+
+\begin{tikzpicture}[node distance=1.5cm, every node/.style={font=\footnotesize}]
+
+% Nodes
+\node (start) [startstop] {Inicio};
+\node (process1) [process, below of=start] {Recopilación de ecuaciones de Navier Stokes};
+\node (process2) [process, below of=process1] {Derivación de 3D a 2D};
+\node (process3) [process, below of=process2] {Adición las ecuaciones de Morison};
+\node (process4) [process, below of=process3] {Codificación en Telemac-2D};
+\node (process1a) [parallelogram, right of=start, xshift=5.2cm] {Parámetros del caso};
+\node (process2a) [process, below of=process1a] {Calibración del coeficiente de drag};
+\node (decision) [decision, below of=process2a, transform shape, yscale=0.6] {¿Validación?};
+
+\node (process1b) [process, below of=decision] {Nuevos arreglos de vegetación};
+\node (process2b) [process, below of=process1b] {Análisis de resultados};
+\node (stop) [startstop, right of=process2b, xshift=2cm] {Fin};
+
+
+\% Arrows
+\draw [arrow] (start) -- (process1);
+\draw [arrow] (process1) -- (process2);
+\draw [arrow] (process2) -- (process3);
+\draw [arrow] (process3) -- (process4);
+\draw [arrow] (decision.est) -| ++(3,0) |- (process1a.est) node[midway, above] {No};
+\draw [arrow] (process4.est) -| ++(1.2,0) |- ++(0,7)-| (process1a.north) node[midway, above] {Sí};
+\draw [arrow] (decision) --(process1b) node[left, midway] {Sí};
+\draw [arrow] (process1a) -- (process2a);
+\draw [arrow] (process2a) -- (decision);
+\draw [arrow] (process1b) -- (process2b);
+\draw [arrow] (process2b) -- (stop);
+
+
+\end{tikzpicture}
+\label{fig:diagrama_flujo}
+\end{flushleft}
+
+\end{figure}
+
+#+END_EXPORT
+
+
+
+* Modelo numérico
+** Conservación de masa y momento
+
+#+begin_export latex
+\begin{equation}
+\pdv{h}{t}
++ \div (h \vec{V} ) = 0
+\label{eq:masa}
+\end{equation}
+
+#+end_export
+
+#+begin_export latex
+  \begin{equation}
+  \pdv{h \bar{u}} {t}
+  +\pdv{h \bar{u}^{2}}{x}
+  +\pdv{h \bar{u} \bar{v}}{y}
+  =
+  -g h \pdv{z_s}{x}
+  +\nabla \cdot h (nu \grad \bar{u})
+  -\frac{(\tau_{xz})_{b}}{\rho}
+  +h \bar{f}_{x} 
+  \label{momentox}
+  \end{equation}
+#+end_export
+
+
+
+#+begin_export latex
+\begin{equation}
+  \pdv{\bar{h v}}{t}
+  +\pdv{h \bar{v}\bar{u}}{x}
+  +\pdv{h \bar{v}^{2}}{y}
+  =
+  -g h \pdv{z_s}{y} 
+  +\nabla \cdot (h \nu \grad \bar{v})
+  -\frac{(\tau_{yz})_{b}}{\rho}
+  + h \bar{f}_{y}
+  \label{momentoy}
+  \end{equation}
+#+end_export
+
+ Donde $h$ denota la altura de agua, $u$ denota la velocidad en
+direción x, $v$ denota la velocidad en
+y, $t$ denota el tiempo. El término de Boussinesq $-\frac{H_{0}^2}{6} \grad{(\div\pdv{\vec{u}}{t})} +
+\frac{H_{0}}{2}\grad(\div(H_{0}\pdv{\vec{u}}{t}))$ es añadido en las Eqs. \ref{eq:momentox}
+y \ref{eq:momentoy}.
+
+
+** Ecuación de drag
+Las fuerzas $Fx$ y $Fy$ son inducidas por la resistencia de la vegetación
+\parencite{morison1950} y se paramétriza de manera macroscópica como:
+#+begin_export latex
+
+\begin{equation}
+F = - \frac{1}{2} \rho C_{D} d_{v} N_{v} u \abs{u}
+\label{eq:morison}
+\end{equation}
+#+end_export
+
+Donde $d_{v}$ denota el diámetro de tallo de vegetación, $N_{v}$ denota la
+densidad de la vegetación y $Cd$ denota el coeficiente de arrastre.
+
+** Condición inicial
+La generación de la onda solitaria se realiza utilizando las
+siguientes fórmulas:
+#+begin_export latex
+\begin{equation}
+n = d + H_{i} \sech^2 [\sqrt{\frac{3H_{i}}{4d^3}} (x-x_{0}-ct)]
+\label{eq:solitaryn}
+\end{equation}
+\begin{equation}
+u = \sqrt{gh} \frac{H_{i}}{d} \sech^2 [\sqrt{\frac{3H_{i}}{4d^3}} (x-x_{0}-ct)]
+\label{eq:solitaryu}
+\end{equation}
+#+end_export
+
+
+Aquí, los valores de velocidad y cota de agua son condiciones
+iniciales, donde $n$ se refiere a elevación de la cota de agua,
+$H_{i}$ denota la altura de
+ola, $d$ denota la profundidad de agua y $c=\sqrt{g(h+H)}$ es la velocidad
+de la ola.
+
+
+* Validación
+** Comparación con Jankowski 1998
+
+#+CAPTION: Onda solitaria propagándose en un canal sin pendiente. Perfiles de agua en t=0 s, 10 s, 20 s, 30 s y 40 s
+#+label: fig:ubicacion
+#+attr_latex: :width 260px
+[[file:figure/jankowski.png]]
+
+** Experimento en el laboratorio de Synolakis 2007
+
+#+CAPTION: Comparación de datos experimentales con datos de la simulación de la evolución de $n$ en una pediente de 1:19.85
+#+label: fig:ubicacion
+#+attr_latex: :width 340px
+[[file:figure/synolakisesquema.png]]
+
+** Experimento en el laboratorio de Synolakis 2007 :ignore:
+
+#+label: fig:ubicacion
+#+attr_latex: :width 320px
+[[file:figure/synolakis.png]]
+
+** Experimento en el laboratorio de Huang 2011
+
+#+CAPTION: Ubicación de puntos de medición para un ancho de 1.090 m. Reproducido de \textcite{huang2011}
+#+label: fig:ubicacion
+#+attr_latex: :width 340px
+[[file:figure/huang2011esquema.png]]
+
+
+** Experimento en el laboratorio de Huang 2011   :ignore:
+
+#+CAPTION: Comparación de datos experimentales con datos de la simulación de la evolución de la superficie de agua en los puntos de observación G1 y G5
+#+label: fig:ubicacion
+#+attr_latex: :width 240px
+[[file:figure/huang.png]]
+
+** Experimento en el laboratorio de Zhang 2023
+
+#+CAPTION: (a) Plano general y  posición de medidores de nivel de agua (G1 a G7); (b) comparación de diagrama de varios alturas de vegetación; (c) representa el diagrama de diferentes densidades de vegetación y modo de distribución. Reproducido de \textcite{synolakis2007}
+#+attr_latex: :width 170px
+[[file:~/Documents/investigacion/medellin/tesispregrado/fig/zhang2023esquema.png]]
+
+** Sin vegetacion                                                   :ignore:
+
+#+CAPTION: Evolución del nivel de agua en los puntos de medición G2 a G6 sin vegetación
+#+label: fig:ubicacion
+#+attr_latex: :width 230px
+[[file:~/Documents/investigacion/medellin/tesispregrado/fig/zhang2023fig9.png]]
+
+
+** Caso c2                                                          :ignore:
+
+#+CAPTION: Evolución del nivel de agua en los puntos de medición G2 a G6 con vegetación de densidad 546 plantas/m^2 y índice de sumergión de 0.75
+#+attr_latex: :width 230px
+[[file:~/Documents/investigacion/medellin/tesispregrado/fig/zhang2023fig9c2.png]]
+
+** Caso c3                                                          :ignore:
+
+#+CAPTION: Evolución del nivel de agua en los puntos de medición G2 a G6 con vegetación de densidad 1150 plantas/m^2 y índice de sumergión de 0.75
+#+attr_latex: :width 230px
+[[file:~/Documents/investigacion/medellin/tesispregrado/fig/zhang2023fig9c3.png]]
+
+
+** Caso c4                                                          :ignore:
+
+#+CAPTION: Evolución del nivel de agua en los puntos de medición G2 a G6 con vegetación de densidad 2241 plantas/m^2 y índice de sumergión de 0.75
+#+attr_latex: :width 230px
+[[file:~/Documents/investigacion/medellin/tesispregrado/fig/zhang2023fig9c4.png]]
+
+* Futuros trabajos
+** Futuros trabajos
+- Profundizar en estudiar la altura mixta de vegetación en un modelo tridimensional.
+- Obtener el valor del coeficiente de drag mediante métodos de predicción estadísticos.
+- Adaptar una nueva ecuación de turbulencia para vegetación en costas.
+- Realizar experimentos físicos del caso de alturas mixtas.
+- Utilizar el modelo en casos real de interacción costa con vegetación.
+* diapo final                                                        :ignore:
+\maketitle
