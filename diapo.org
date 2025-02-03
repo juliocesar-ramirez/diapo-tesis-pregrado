@@ -39,11 +39,11 @@
 #+LATEX_HEADER: \usepackage{bm}
 #+LATEX_HEADER: \usepackage{tikz}
 #+LATEX_HEADER: \usetikzlibrary{shapes.geometric, arrows}
-#+latex_header: \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30]
-#+latex_header: \tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
-#+latex_header: \tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=0.5cm, text centered, draw=black, fill=green!30]
+#+latex_header: \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=1cm, minimum height=0.5cm,text centered, draw=black, fill=red!30]
+#+latex_header: \tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=0.6cm, text centered, draw=black, fill=blue!30]
+#+latex_header: \tikzstyle{decision} = [diamond, minimum width=4cm, minimum height=0.5cm, text centered, draw=black, fill=green!30]
 #+latex_header: \tikzstyle{arrow} = [thick,->,>=stealth]
-#+latex_header: \tikzstyle{parallelogram} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+#+latex_header: \tikzstyle{parallelogram} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=0.5cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
 #+LATEX_HEADER: \usepackage{ragged2e}
 #+LATEX_HEADER: \usepackage{textcomp}
 #+LATEX_HEADER: \usepackage{pgfplots}
@@ -97,22 +97,21 @@
   configuración de vegetación de altura mixta para su posterior recomendación y análisis.
 
 * Metodología
+** Metodología 
 #+BEGIN_EXPORT latex
+\vspace*{-0.8cm} % Ajusta este valor para moverlos más arriba (o más abajo si usas un valor positivo)
 
-\begin{figure}[H]
 \begin{flushleft}
-
-\begin{tikzpicture}[node distance=1.5cm, every node/.style={font=\footnotesize}]
-
+\begin{tikzpicture}[node distance=1.1cm, every node/.style={font=\footnotesize}]
 % Nodes
 \node (start) [startstop] {Inicio};
 \node (process1) [process, below of=start] {Recopilación de ecuaciones de Navier Stokes};
 \node (process2) [process, below of=process1] {Derivación de 3D a 2D};
 \node (process3) [process, below of=process2] {Adición las ecuaciones de Morison};
 \node (process4) [process, below of=process3] {Codificación en Telemac-2D};
-\node (process1a) [parallelogram, right of=start, xshift=5.2cm] {Parámetros del caso};
+\node (process1a) [parallelogram, right of=start, xshift=6.2cm] {Parámetros del caso};
 \node (process2a) [process, below of=process1a] {Calibración del coeficiente de drag};
-\node (decision) [decision, below of=process2a, transform shape, yscale=0.6] {¿Validación?};
+\node (decision) [decision, below of=process2a, transform shape, yscale=0.4] {¿Validación?};
 
 \node (process1b) [process, below of=decision] {Nuevos arreglos de vegetación};
 \node (process2b) [process, below of=process1b] {Análisis de resultados};
@@ -124,20 +123,18 @@
 \draw [arrow] (process1) -- (process2);
 \draw [arrow] (process2) -- (process3);
 \draw [arrow] (process3) -- (process4);
-\draw [arrow] (decision.est) -| ++(3,0) |- (process1a.est) node[midway, above] {No};
-\draw [arrow] (process4.est) -| ++(1.2,0) |- ++(0,7)-| (process1a.north) node[midway, above] {Sí};
+\draw [arrow] (decision.est) -| ++(2,0) |- (process1a.est) node[midway, above] {No};
+\draw [arrow] (process4.est) -| ++(1.3,0) |- ++(0,5.5)-| (process1a.north) node[midway, above] {Sí};
 \draw [arrow] (decision) --(process1b) node[left, midway] {Sí};
 \draw [arrow] (process1a) -- (process2a);
 \draw [arrow] (process2a) -- (decision);
 \draw [arrow] (process1b) -- (process2b);
 \draw [arrow] (process2b) -- (stop);
 
-
 \end{tikzpicture}
 \label{fig:diagrama_flujo}
 \end{flushleft}
 
-\end{figure}
 
 #+END_EXPORT
 
